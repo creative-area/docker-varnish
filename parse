@@ -1,13 +1,13 @@
 #!/bin/bash
 
 ################################################################
-# 
+#
 # Apache License 2.0
 #
 # This file will parse the Environment variables created by
 # node containers linked to the varnish container
 # and automatically create a default.vcl configuration file
-# 
+#
 # The configuration file will create a load balancer and add
 # each of the node containers linked.
 #
@@ -21,7 +21,6 @@
 envs=`printenv`
 
 # Remove the default.vcl file
-
 echo "vcl 4.0;
 backend default {
 .host = "127.0.0.1";
@@ -31,53 +30,54 @@ backend default {
 .between_bytes_timeout = 60s;
 .max_connections = 800;
 }
- 
+
 acl purge {
 "127.0.0.1";
 "localhost";
 }
- 
+
 sub vcl_recv {
 set req.grace = 2m;
- 
+
 # Set X-Forwarded-For header for logging in nginx
 remove req.http.X-Forwarded-For;
 set req.http.X-Forwarded-For = client.ip;
- 
+
 # Remove has_js and CloudFlare/Google Analytics __* cookies and statcounter is_unique
 set req.http.Cookie = regsuball(req.http.Cookie, "(^|;\s*)(_[_a-z]+|has_js|is_
 unique)=[^;]*", "");
 # Remove a ";" prefix, if present.
 set req.http.Cookie = regsub(req.http.Cookie, "^;\s*", "");
- 
+
 # Either the admin pages or the login
 if (req.url ~ "/wp-(login|admin|cron)") {
 # Don't cache, pass to backend
 return (pass);
 }" > /etc/varnish/default.vcl
+
 # Loop through all of our variables
 for env in $envs
 do
   # separate the name of the variable from the value
-  IFS== read name value <<< "$env"  
-  
+  IFS== read name value <<< "$env"
+
   # if the variable has PORT_80_TCP_ADDR it means this is a
   # variable created by a node container linked to the varnish
   # container
   if [[ $name == *PORT_80_TCP_ADDR* ]]; then
 
-# create a backend for each node container found in the variables
-cat >> /etc/varnish/default.vcl << EOF
-  backend ${name} {
-    .host = "${value}";
-    .port = "80";
-    .connect_timeout = 60s;
-    .first_byte_timeout = 60s;
-    .between_bytes_timeout = 60s;
-    .max_connections = 800;
-  }
-  
-EOF
+    # create a backend for each node container found in the variables
+    cat >> /etc/varnish/default.vcl << EOF
+    backend ${name} {
+      .host = "${value}";
+      .port = "80";
+      .connect_timeout = 60s;
+      .first_byte_timeout = 60s;
+      .between_bytes_timeout = 60s;
+      .max_connections = 800;
+    }
+
+    EOF
 
   fi
 done
@@ -87,40 +87,40 @@ done
 # create the first line
 cat >> /etc/varnish/default.vcl << EOF
 
-  
-  sub vcl_init {
-    new cluster1 = directors.round_robin();
 
-EOF
+sub vcl_init {
+  new cluster1 = directors.round_robin();
 
-# loop again to add each backend created
-for env in $envs
-do
-  IFS== read name value <<< "$env"  
-  if [[ $name == *PORT_80_TCP_ADDR* ]]; then
+  EOF
 
-# create each backend in the load balancer
-cat >> /etc/varnish/default.vcl << EOF
-     cluster1.add.backend = (${name}, 1.0); 
-EOF
+  # loop again to add each backend created
+  for env in $envs
+  do
+    IFS== read name value <<< "$env"
+    if [[ $name == *PORT_80_TCP_ADDR* ]]; then
 
-  fi
-done
+      # create each backend in the load balancer
+      cat >> /etc/varnish/default.vcl << EOF
+      cluster1.add.backend = (${name}, 1.0);
+      EOF
 
-# close the load balancer line
-# and add the balancer as the req.backend
-cat >> /etc/varnish/default.vcl << EOF
+    fi
+  done
 
-  }
-  
+  # close the load balancer line
+  # and add the balancer as the req.backend
+  cat >> /etc/varnish/default.vcl << EOF
+
+}
+
 sub vcl_fetch {
-   if (req.url ~ "\.(css|js|png|gif|jpg)$") {
-     unset beresp.http.set-cookie;
-     set beresp.ttl = 66h;
+  if (req.url ~ "\.(css|js|png|gif|jpg)$") {
+    unset beresp.http.set-cookie;
+    set beresp.ttl = 66h;
   }
 }
-  
+
 sub vcl_recv {
-    set req.backend_hint = cluster1.backend();
+  set req.backend_hint = cluster1.backend();
 }
 EOF
