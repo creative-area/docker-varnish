@@ -1,6 +1,6 @@
 FROM        ubuntu:15.04
-MAINTAINER  Frank Lemanschik
- 
+MAINTAINER  CREATIVE AREA
+
 ENV DEBIAN_FRONTEND noninteractive
 
 # Update apt sources
@@ -17,6 +17,7 @@ ADD default.vcl /etc/varnish/default.vcl
 
 # Export environment variables
 ENV VARNISH_PORT 80
+ENV VARNISH_STORAGE_BACKEND malloc,100M
 
 # Expose port 80
 EXPOSE 80
