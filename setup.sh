@@ -243,6 +243,10 @@ sub vcl_backend_response {
   if (beresp.status == 301 || beresp.status == 302) {
     set beresp.http.Location = regsub(beresp.http.Location, ":[0-9]+", "");
   }
+  if (beresp.status == 404) {
+    set beresp.ttl = 15s;
+    set beresp.uncacheable = true;
+  }
   if (beresp.ttl <= 0s || beresp.http.Set-Cookie || beresp.http.Vary == "*") {
     set beresp.ttl = 120s;
     set beresp.uncacheable = true;
