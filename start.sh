@@ -1,8 +1,8 @@
 #!/bin/bash
+set -e
 
-# Parse the environment variables and auto-create the default.vcl file
-/parse
+/setup.sh
 
-# Start varnish and log
 varnishd -f /etc/varnish/default.vcl -s ${VARNISH_STORAGE_BACKEND} -a 0.0.0.0:${VARNISH_PORT}
+sleep 4
 varnishlog
