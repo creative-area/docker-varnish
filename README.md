@@ -20,6 +20,7 @@ Varnish will use the following environment variables. You can override them if y
 
 	VARNISH_PORT 80
 	VARNISH_STORAGE_BACKEND malloc,100M
+	VARNISHNCSA_LOGFORMAT %h %l %u %t "%r" %s %b "%{Referer}i" "%{User-agent}i"
 
 
 ## Credit
