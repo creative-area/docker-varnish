@@ -6,7 +6,7 @@ ENV VARNISH_PORT 80
 ENV VARNISH_STORAGE_BACKEND malloc,100M
 ENV VARNISHNCSA_LOGFORMAT %h %l %u %t "%r" %s %b "%{Referer}i" "%{User-agent}i"
 
-RUN apt-get -qq update && apt-get install -y apt-transport-https supervisor
+RUN apt-get -qq update && apt-get install -y curl apt-transport-https supervisor
 
 RUN sed -i 's/^\(\[supervisord\]\)$/\1\nnodaemon=true/' /etc/supervisor/supervisord.conf
 
