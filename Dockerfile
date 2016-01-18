@@ -12,7 +12,7 @@ RUN sed -i 's/^\(\[supervisord\]\)$/\1\nnodaemon=true/' /etc/supervisor/supervis
 
 RUN \
     curl -sL https://repo.varnish-cache.org/GPG-key.txt | apt-key add - && \
-    echo "deb https://repo.varnish-cache.org/ubuntu/ trusty varnish-4.0" >> /etc/apt/sources.list.d/varnish-cache.list && \
+    echo "deb https://repo.varnish-cache.org/ubuntu/ trusty varnish-4.1" >> /etc/apt/sources.list.d/varnish-cache.list && \
     apt-get -qq update && \
     apt-get install -y varnish
 
