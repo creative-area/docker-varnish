@@ -37,17 +37,6 @@ backend ${name} {
   .first_byte_timeout = 300s;
   .connect_timeout = 5s;
   .between_bytes_timeout = 2s;
-  .probe = {
-    .request =
-      "HEAD / HTTP/1.1"
-      "Host: localhost"
-      "Connection: close"
-      "User-Agent: Varnish Health Probe";
-    .interval = 5s;
-    .timeout = 1s;
-    .window = 5;
-    .threshold = 3;
-  }
 }
 EOF
 
