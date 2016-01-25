@@ -3,4 +3,4 @@ set -e
 
 /setup.sh
 
-exec supervisord -c /etc/supervisor/supervisord.conf
+exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf

@@ -18,10 +18,21 @@ Varnish will detect all the node containers you pass and add them to the load ba
 
 Varnish will use the following environment variables. You can override them if you want
 
-	VARNISH_PORT 80
-	VARNISH_STORAGE_BACKEND malloc,100M
-	VARNISHNCSA_LOGFORMAT %h %l %u %t "%r" %s %b "%{Referer}i" "%{User-agent}i"
-
+- `VARNISH_VCL_CONF` /etc/varnish/default.vcl
+- `VARNISH_LISTEN_ADDRESS` 0.0.0.0
+- `VARNISH_LISTEN_PORT` 80
+- `VARNISH_ADMIN_LISTEN_ADDRESS` 0.0.0.0
+- `VARNISH_ADMIN_LISTEN_PORT` 6082
+- `VARNISH_MIN_THREADS` 1
+- `VARNISH_MAX_THREADS` 1000
+- `VARNISH_THREAD_TIMEOUT` 120
+- `VARNISH_SECRET_FILE` /etc/varnish/secret
+- `VARNISH_STORAGE_PATH` /varnish_storage
+- `VARNISH_STORAGE_FILE` $VARNISH_STORAGE_PATH/varnish_storage.bin
+- `VARNISH_STORAGE_SIZE` 1G
+- `VARNISH_STORAGE` malloc,$VARNISH_STORAGE_SIZE
+- `VARNISH_TTL` 120
+- `VARNISH_NCSA_LOGFORMAT` "%h %l %u %t %D \"%r\" %s %b %{Varnish:hitmiss}x \"%{User-agent}i\""
 
 ## Credit
 

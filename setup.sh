@@ -37,6 +37,17 @@ backend ${name} {
   .first_byte_timeout = 300s;
   .connect_timeout = 5s;
   .between_bytes_timeout = 2s;
+  .probe = {
+    .request =
+      "HEAD / HTTP/1.1"
+      "Host: localhost"
+      "Connection: close"
+      "User-Agent: Varnish Health Probe";
+    .interval = 5s;
+    .timeout = 1s;
+    .window = 5;
+    .threshold = 3;
+  }
 }
 EOF
 
@@ -51,6 +62,9 @@ acl purge {
   "localhost";
   "127.0.0.1";
   "::1";
+  "172.16.0.0"/12;
+  "192.168.0.0"/16;
+  "10.0.0.0"/8;
 }
 EOF
 
@@ -86,13 +100,6 @@ EOF
 cat >> /etc/varnish/default.vcl << EOF
 sub vcl_recv {
   set req.backend_hint = vdir.backend();
-  if (req.restarts == 0) {
-    if (req.http.X-Forwarded-For) {
-      set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
-    } else {
-      set req.http.X-Forwarded-For = client.ip;
-    }
-  }
   set req.http.Host = regsub(req.http.Host, ":[0-9]+", "");
   set req.url = std.querysort(req.url);
   if (req.method == "PURGE") {
@@ -114,6 +121,12 @@ sub vcl_recv {
   if (req.method != "GET" && req.method != "HEAD") {
     return (pass);
   }
+  if (req.url ~ "(\?|&)(utm_source|utm_medium|utm_campaign|utm_content|gclid|cx|ie|cof|siteurl)=") {
+    set req.url = regsuball(req.url, "&(utm_source|utm_medium|utm_campaign|utm_content|gclid|cx|ie|cof|siteurl)=([A-z0-9_\-\.%25]+)", "");
+    set req.url = regsuball(req.url, "\?(utm_source|utm_medium|utm_campaign|utm_content|gclid|cx|ie|cof|siteurl)=([A-z0-9_\-\.%25]+)", "?");
+    set req.url = regsub(req.url, "\?&", "?");
+    set req.url = regsub(req.url, "\?$", "");
+  }
   if (req.url ~ "\#") {
     set req.url = regsub(req.url, "\#.*$", "");
   }
@@ -123,6 +136,7 @@ sub vcl_recv {
   set req.http.Cookie = regsuball(req.http.Cookie, "has_js=[^;]+(; )?", "");
   set req.http.Cookie = regsuball(req.http.Cookie, "__utm.=[^;]+(; )?", "");
   set req.http.Cookie = regsuball(req.http.Cookie, "_ga=[^;]+(; )?", "");
+  set req.http.Cookie = regsuball(req.http.Cookie, "_gat=[^;]+(; )?", "");
   set req.http.Cookie = regsuball(req.http.Cookie, "utmctr=[^;]+(; )?", "");
   set req.http.Cookie = regsuball(req.http.Cookie, "utmcmd.=[^;]+(; )?", "");
   set req.http.Cookie = regsuball(req.http.Cookie, "utmccn.=[^;]+(; )?", "");
@@ -138,11 +152,11 @@ sub vcl_recv {
       return(purge);
     }
   }
-  if (req.url ~ "^[^?]*\.(mp[34]|rar|tar|tgz|gz|wav|zip|bz2|xz|7z|avi|mov|ogm|mpe?g|mk[av])(\?.*)?$") {
+  if (req.url ~ "^[^?]*\.(7z|avi|bz2|flac|flv|gz|mka|mkv|mov|mp3|mp4|mpeg|mpg|ogg|ogm|opus|rar|tar|tgz|tbz|txz|wav|webm|xz|zip)(\?.*)?$") {
     unset req.http.Cookie;
     return (hash);
   }
-  if (req.url ~ "^[^?]*\.(bmp|bz2|css|doc|eot|flv|gif|gz|ico|jpeg|jpg|js|less|pdf|png|rtf|swf|txt|woff|xml)(\?.*)?$") {
+  if (req.url ~ "^[^?]*\.(7z|avi|bmp|bz2|css|csv|doc|docx|eot|flac|flv|gif|gz|ico|jpeg|jpg|js|less|mka|mkv|mov|mp3|mp4|mpeg|mpg|odt|otf|ogg|ogm|opus|pdf|png|ppt|pptx|rar|rtf|svg|svgz|swf|tar|tbz|tgz|ttf|txt|txz|wav|webm|webp|woff|woff2|xls|xlsx|xml|xz|zip)(\?.*)?$") {
     unset req.http.Cookie;
     return (hash);
   }
@@ -232,20 +246,16 @@ sub vcl_backend_response {
     unset beresp.http.Surrogate-Control;
     set beresp.do_esi = true;
   }
-  if (bereq.url ~ "^[^?]*\.(bmp|bz2|css|doc|eot|flv|gif|gz|ico|jpeg|jpg|js|less|mp[34]|pdf|png|rar|rtf|swf|tar|tgz|txt|wav|woff|xml|zip)(\?.*)?$") {
+  if (bereq.url ~ "^[^?]*\.(7z|avi|bmp|bz2|css|csv|doc|docx|eot|flac|flv|gif|gz|ico|jpeg|jpg|js|less|mka|mkv|mov|mp3|mp4|mpeg|mpg|odt|otf|ogg|ogm|opus|pdf|png|ppt|pptx|rar|rtf|svg|svgz|swf|tar|tbz|tgz|ttf|txt|txz|wav|webm|webp|woff|woff2|xls|xlsx|xml|xz|zip)(\?.*)?$") {
     unset beresp.http.set-cookie;
   }
-  if (bereq.url ~ "^[^?]*\.(jpeg|jpg|gif|png|mp[34]|rar|tar|tgz|gz|wav|zip|bz2|xz|7z|avi|mov|ogm|mpe?g|mk[av])(\?.*)?$") {
+  if (bereq.url ~ "^[^?]*\.(7z|avi|bz2|flac|flv|gz|mka|mkv|mov|mp3|mp4|mpeg|mpg|ogg|ogm|opus|rar|tar|tgz|tbz|txz|wav|webm|xz|zip)(\?.*)?$") {
     unset beresp.http.set-cookie;
     set beresp.do_stream = true;
     set beresp.do_gzip = false;
   }
   if (beresp.status == 301 || beresp.status == 302) {
     set beresp.http.Location = regsub(beresp.http.Location, ":[0-9]+", "");
-  }
-  if (beresp.status == 404) {
-    set beresp.ttl = 15s;
-    set beresp.uncacheable = true;
   }
   if (beresp.ttl <= 0s || beresp.http.Set-Cookie || beresp.http.Vary == "*") {
     set beresp.ttl = 120s;
