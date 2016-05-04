@@ -251,6 +251,9 @@ sub vcl_backend_response {
     set beresp.uncacheable = true;
     return (deliver);
   }
+  if (beresp.status == 500 || beresp.status == 502 || beresp.status == 503 || beresp.status == 504) {
+    return (abandon);
+  }
   set beresp.grace = 6h;
   return (deliver);
 }
