@@ -6,13 +6,13 @@ This image is intended to provide a caching and load balancing layer in front of
 
 ```bash
 $ docker run -d -P \
---link container_name:node1 \
---link container_name2:node2 \
+--link container \
+--link another_container \
 creativearea/varnish
 ```
 
 To run the container you need to link the containers you want to run behind the load balancer that Varnish will create.
-Varnish will detect all the node containers you pass and add them to the load balancer, we do this with the `setup.sh` file. The only requirement is that when you link your containers you use the name `nodeN`.
+Varnish will detect all the backend containers you pass and will add them to the load balancer. The only requirement is that your linked backends expose the port 80.
 
 ## Varnish environment variables
 
@@ -36,5 +36,4 @@ Varnish will use the following environment variables. You can override them if y
 
 ## Credit
 
-- This repository is a fork of [dockerimages/docker-varnish](https://github.com/dockerimages/docker-varnish)
 - The VCL config is based on Mattias Geniar [Varnish 4 configuration templates](https://github.com/mattiasgeniar/varnish-4.0-configuration-templates)
