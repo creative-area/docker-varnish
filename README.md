@@ -27,10 +27,7 @@ Varnish will use the following environment variables. You can override them if y
 - `VARNISH_MAX_THREADS` 1000
 - `VARNISH_THREAD_TIMEOUT` 120
 - `VARNISH_SECRET_FILE` /etc/varnish/secret
-- `VARNISH_STORAGE_PATH` /varnish_storage
-- `VARNISH_STORAGE_FILE` $VARNISH_STORAGE_PATH/varnish_storage.bin
-- `VARNISH_STORAGE_SIZE` 1G
-- `VARNISH_STORAGE` malloc,$VARNISH_STORAGE_SIZE
+- `VARNISH_STORAGE` malloc,100M
 - `VARNISH_TTL` 120
 - `VARNISH_NCSA_LOGFORMAT` "%h %l %u %t %D \"%r\" %s %b %{Varnish:hitmiss}x \"%{User-agent}i\""
 
